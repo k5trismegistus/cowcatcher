@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  frontend:
+    build: ./
+    command: npm run dev
+    ports:
+      - 1234:3000
+    volumes:
+      - ./:/app
+    restart: always
