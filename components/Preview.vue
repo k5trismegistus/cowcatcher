@@ -4,15 +4,28 @@
       <v-col>
         <div
           class="previewZoneContainer"
-          :style="`height: ${containerHeight}px`"
           ref="previewZoneContainer"
+          :style="`height: ${containerHeight}px; transform: scale(${scaleCanvas}); transform-origin: 0 0`"
         >
           <canvas
             :width='`${desiredWidth}`'
             :height='`${desiredHeight}`'
-            :style="`transform: scale(${scaleCanvas}); transform-origin: 0 0`"
             ref="previewZone"
-            class='previewZone'
+            class="canvas"
+            v-show="false"
+          ></canvas>
+          <canvas
+            :width='`${desiredWidth}`'
+            :height='`${desiredHeight}`'
+            ref="wipeZone"
+            class="canvas"
+            v-show="false"
+          ></canvas>
+          <canvas
+            :width='`${desiredWidth}`'
+            :height='`${desiredHeight}`'
+            ref="mergedZone"
+            class="canvas"
           ></canvas>
         </div>
       </v-col>
@@ -115,24 +128,27 @@ export default {
     this.handleResize()
     window.addEventListener('resize', this.handleResize)
 
-
     const webcamStream = await this.initWipe()
-
-    const canvasStream = this.$refs.previewZone.captureStream()
+    const mergedStream = this.$refs.mergedZone.captureStream()
 
     const recordStream = new MediaStream()
 
     const tracks = [
-      canvasStream.getVideoTracks()[0],
+      mergedStream.getVideoTracks()[0],
       webcamStream.getAudioTracks()[0],
     ]
-
     tracks.forEach((t) => recordStream.addTrack(t))
 
     this.recorder = new MediaRecorder(recordStream)
     this.recorder.ondataavailable = (e) => {
       this.recordedVideoUrl = window.URL.createObjectURL(e.data) // videoタグが扱えるように、記録データを加工
     }
+
+    const rendermergedInterval = setInterval(() => {
+      this.rendermerged()
+    }, 1000/30)
+    this.intervals.push(rendermergedInterval)
+
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
@@ -214,23 +230,37 @@ export default {
       const renderWipeInterval = setInterval(() => {
         this.renderVideo()
       }, 1000/30)
-
       this.intervals.push(renderWipeInterval)
 
       return webcamStream
     },
     setWipeMode(mode) {
       this.wipeMode = mode
-
+      this.clearWipe()
+      this.renderPage()
+    },
+    clearWipe() {
+      const canvas = this.$refs.wipeZone
+      const context = canvas.getContext('2d')
+      context.clearRect(0, 0, DESIRED_WIDTH, DESIRED_HEIGHT)
+    },
+    clearPreview() {
       const canvas = this.$refs.previewZone
       const context = canvas.getContext('2d')
-
       context.clearRect(0, 0, DESIRED_WIDTH, DESIRED_HEIGHT)
-      this.renderPage()
+    },
+    async rendermerged() {
+      const preview = this.$refs.previewZone
+      const wipe = this.$refs.wipeZone
+
+      const canvas = this.$refs.mergedZone
+      const context = canvas.getContext('2d')
+      context.drawImage(preview, 0, 0)
+      context.drawImage(wipe, 0, 0)
     },
     async renderVideo() {
       const wipe = this.$refs.wipe
-      const canvas = this.$refs.previewZone
+      const canvas = this.$refs.wipeZone
       const context = canvas.getContext('2d')
       context.drawImage(wipe, 80, 0, 480, 480, this.wipeLeft, this.wipeTop, this.wipeWidth, this.wipeHeight)
     },
@@ -248,11 +278,21 @@ export default {
         DESIRED_HEIGHT / viewport.height
       )
       const scaledViewport = page.getViewport({ scale: scale })
+      const offsetX = (DESIRED_WIDTH - scaledViewport.width) / 2
+      const offsetY = (DESIRED_HEIGHT - scaledViewport.height) / 2
+
+      const vp = page.getViewport({
+        scale: scale,
+        offsetX: offsetX,
+        offsetY: offsetY,
+      })
+
+      this.clearPreview()
 
       const context = canvas.getContext('2d')
       this.renderingTask = page.render({
         canvasContext: context,
-        viewport: scaledViewport,
+        viewport: vp,
       })
       this.renderingTask._internalRenderTask.callback = () => {
         this.renderingTask = null
@@ -291,5 +331,10 @@ export default {
 <style>
 .previewZoneContainer {
   width: 100%
+}
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 </style>
