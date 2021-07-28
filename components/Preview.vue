@@ -53,6 +53,27 @@
         >Right top</v-btn>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col>
+        <p>Recording control</p>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-btn
+          @click="startRecord"
+          v-if="recState === 'ready'"
+        >Record</v-btn>
+        <v-btn
+          @click="finishRecord"
+          v-if="recState === 'recording'"
+        >Finish</v-btn>
+        <v-btn
+          @click="downloadVideo"
+          v-if="recState === 'recorded'"
+        >Download Video</v-btn>
+      </v-col>
+    </v-row>
 
     <video width='300px' height='200px' class="preview" ref="wipe" muted v-show="false"></video>
 
@@ -73,6 +94,7 @@ export default {
   props: ['slidePdfFile'],
   data() {
     return {
+      recState: 'ready',
       pdf: null,
       currentPageNum: 1,
       renderingTask: null,
@@ -80,6 +102,8 @@ export default {
       desiredWidth: DESIRED_WIDTH,
       desiredHeight: DESIRED_HEIGHT,
       wipeMode: 'left-top',
+      recorder: null,
+      recordedVideoUrl: '',
       intervals: [],
       timeouts: [],
     }
@@ -92,7 +116,23 @@ export default {
     window.addEventListener('resize', this.handleResize)
 
 
-    await this.initWipe()
+    const webcamStream = await this.initWipe()
+
+    const canvasStream = this.$refs.previewZone.captureStream()
+
+    const recordStream = new MediaStream()
+
+    const tracks = [
+      canvasStream.getVideoTracks()[0],
+      webcamStream.getAudioTracks()[0],
+    ]
+
+    tracks.forEach((t) => recordStream.addTrack(t))
+
+    this.recorder = new MediaRecorder(recordStream)
+    this.recorder.ondataavailable = (e) => {
+      this.recordedVideoUrl = window.URL.createObjectURL(e.data) // videoタグが扱えるように、記録データを加工
+    }
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
@@ -164,7 +204,7 @@ export default {
     async initWipe() {
       const webcamStream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: "environment" },
-        audio: false,
+        audio: true,
       })
 
       const preview = this.$refs.wipe
@@ -176,6 +216,8 @@ export default {
       }, 1000/30)
 
       this.intervals.push(renderWipeInterval)
+
+      return webcamStream
     },
     setWipeMode(mode) {
       this.wipeMode = mode
@@ -225,6 +267,23 @@ export default {
     async pageForward() {
       this.currentPageNum = this.currentPageNum + 1
       await this.renderPage()
+    },
+    startRecord() {
+      this.recorder.start()
+      this.recState = 'recording'
+    },
+    finishRecord() {
+      this.recorder.stop()
+      this.recState = 'recorded'
+    },
+    downloadVideo() {
+      const a = document.createElement("a")
+      document.body.appendChild(a)
+      a.style = "display: none"
+      a.href = this.recordedVideoUrl
+      a.download = "out.webm"
+      a.click(this.recordedVideoUrl)
+      window.URL.revokeObjectURL(this.recordedVideoUrl)
     },
   }
 }
