@@ -4,7 +4,7 @@
       <v-col>
         <div
           class="previewZoneContainer"
-          :style="`height: ${desiredHeight * scaleCanvas}px`"
+          :style="`height: ${containerHeight}px`"
           ref="previewZoneContainer"
         >
           <canvas
@@ -60,14 +60,14 @@
 
 </template>
 <script>
-import * as PDFJS from 'pdfjs-dist'
-PDFJS.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
-import { readFileAsync } from '~/utils'
+import { loadPdf } from '~/utils'
 
 const DESIRED_WIDTH = 1280
 const DESIRED_HEIGHT = 720
-const WIPE_WIDTH = 200
-const WIPE_HEIGHT = 200
+const WIPE_SMALL_WIDTH = 240
+const WIPE_SMALL_HEIGHT = 240
+const WIPE_FS_WIDTH = 1280
+const WIPE_FS_HEIGHT = 720
 
 export default {
   props: ['slidePdfFile'],
@@ -79,42 +79,32 @@ export default {
       scaleCanvas: 1,
       desiredWidth: DESIRED_WIDTH,
       desiredHeight: DESIRED_HEIGHT,
-      wipeMode: 'left-top'
+      wipeMode: 'left-top',
+      intervals: [],
+      timeouts: [],
     }
   },
   async mounted() {
-    const slidePdfData = await readFileAsync(this.slidePdfFile)
-    this.pdf = await PDFJS.getDocument({
-      data: slidePdfData,
-      cMapUrl: '/cmaps/',
-      cMapPacked: true
-    }).promise
+    this.pdf = await loadPdf(this.slidePdfFile)
     this.currentPageNum = 1
-
     this.renderPage()
-
     this.handleResize()
     window.addEventListener('resize', this.handleResize)
 
 
-    this.recordStream = await navigator.mediaDevices.getUserMedia(
-      {
-        video: { width: '640px', height: '480px', facingMode: "environment" },
-        audio: true
-      })
-
-    const preview = this.$refs.wipe
-    preview.srcObject = this.recordStream
-    preview.play()
-
-    setInterval(() => {
-      this.renderVideo()
-    }, 1000/30)
+    await this.initWipe()
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
+
+    this.intervals.forEach((i) => {
+      clearInterval(i)
+    })
   },
   computed: {
+    containerHeight() {
+      return DESIRED_HEIGHT * this.scaleCanvas
+    },
     totalPage() {
       if (!this.pdf) {
         return 0
@@ -126,6 +116,24 @@ export default {
     },
     showForwardBtn() {
       return this.currentPageNum < this.totalPage
+    },
+    wipeWidth() {
+      if (this.wipeMode === 'left-top') {
+        return WIPE_SMALL_WIDTH
+      }
+
+      if (this.wipeMode === 'right-top') {
+        return WIPE_SMALL_WIDTH
+      }
+    },
+    wipeHeight() {
+      if (this.wipeMode === 'left-top') {
+        return WIPE_SMALL_HEIGHT
+      }
+
+      if (this.wipeMode === 'right-top') {
+        return WIPE_SMALL_HEIGHT
+      }
     },
     wipeTop() {
       if (this.wipeMode === 'left-top') {
@@ -142,7 +150,7 @@ export default {
       }
 
       if (this.wipeMode === 'right-top') {
-        return DESIRED_WIDTH - WIPE_WIDTH
+        return DESIRED_WIDTH - this.wipeWidth
       }
     }
   },
@@ -152,6 +160,22 @@ export default {
         const displayWidth = this.$refs.previewZoneContainer.clientWidth
         this.scaleCanvas = displayWidth / DESIRED_WIDTH
       }
+    },
+    async initWipe() {
+      const webcamStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: "environment" },
+        audio: false,
+      })
+
+      const preview = this.$refs.wipe
+      preview.srcObject = webcamStream
+      preview.play()
+
+      const renderWipeInterval = setInterval(() => {
+        this.renderVideo()
+      }, 1000/30)
+
+      this.intervals.push(renderWipeInterval)
     },
     setWipeMode(mode) {
       this.wipeMode = mode
@@ -166,7 +190,7 @@ export default {
       const wipe = this.$refs.wipe
       const canvas = this.$refs.previewZone
       const context = canvas.getContext('2d')
-      context.drawImage(wipe, 80, 0, 480, 480, this.wipeLeft, this.wipeTop, 240, 240)
+      context.drawImage(wipe, 80, 0, 480, 480, this.wipeLeft, this.wipeTop, this.wipeWidth, this.wipeHeight)
     },
     async renderPage() {
       if (this.renderingTask) {
