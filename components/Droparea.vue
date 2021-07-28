@@ -19,7 +19,7 @@
           @dragover.prevent
         >
           <p>Drag and drop PDF file here</p>
-
+          <input type="file" @change="onSelectfile" />
         </div>
       </v-col>
     </v-row>
@@ -31,6 +31,13 @@ export default {
   methods: {
     onDropfile(event) {
       const files = [...event.dataTransfer.files]
+      this.setFile(files)
+    },
+    onSelectfile(event) {
+      const files = [...event.target.files]
+      this.setFile(files)
+    },
+    setFile(files) {
       if (files.length > 1) {
         window.alert('Upload only 1 file')
         return
