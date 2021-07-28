@@ -22,29 +22,10 @@
 
       <v-row>
         <v-col>
-          <h2 class='q-question'>I can't find a track, Why?</h2>
+          <h2 class='q-question'>I have a trouble</h2>
           <p class='q-answer'>
-            If the song you are looking for is not included in the analyzed track list, it will not be displayed. <br />
-            We analyzed the top 25% most popular playlists played between 2000 and 2020 that are listed in 1001tracklist. <br />
-            So less famous or newer songs may not be shown. <br />
-            And also there may be unknown bugs etc...
-          </p>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col>
-          <h2 class='q-question'>I found the example of recommended mix is wrong on example playlist, Why?</h2>
-          <p class='q-answer'>
-            We are currently finding that the mashup mix items in the playlist are not parsing well. <br />
-            We are working on fixing this in the future.
-          </p>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col>
-          <h2 class='q-question'>I found the bug on this website. How to tell you?</h2>
-          <p class='q-answer'>
-            Please contact from <nuxt-link class='here-link' :to="{ name: 'contact' }">Here</nuxt-link>
+            At first, this service is tested only on Chrome. If you are using other web browsers, Please try chrome.<br />
+            And avoid using iPhone/iPad.<br />
           </p>
         </v-col>
       </v-row>

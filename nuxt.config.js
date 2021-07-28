@@ -10,7 +10,7 @@ export default {
   target: 'static',
 
   head: {
-    titleTemplate: '%s - Tedder: Explore which track a professional DJ would mix',
+    titleTemplate: '%s - Tedder: Record your presentation',
     title: 'Tedder',
     htmlAttrs: {
       lang: 'en'
@@ -18,16 +18,16 @@ export default {
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: 'Tedder: Explore which track a professional DJ would mix after that track. You can get recommendation of next track in your DJ play derived from analysis of top 25% playlist made by popular DJs.' },
+      { hid: 'description', name: 'description', content: 'Tedder: Record your presentation' },
       { hid: 'keywords', name: 'keywords', content: 'DJ,playlist,music,club' },
-      { hid: 'author', name: 'author', content: 'nexxtrack' },
+      { hid: 'author', name: 'author', content: 'tedder' },
 
       { hid: 'og:site_name', property: 'og:site_name', content: 'Tedder' },
       { hid: 'og:type', property: 'og:type', content: 'website' },
-      { hid: 'og:url', property: 'og:url', content: 'https://nexxtrack.club' },
-      { hid: 'og:title', property: 'og:title', content: 'nexxtrack' },
-      { hid: 'og:description', property: 'og:description', content: 'Tedder: Explore which track a professional DJ would mix after that track. You can get recommendation of next track in your DJ play derived from analysis of top 25% playlist made by popular DJs.' },
-      { hid: 'og:image', property: 'og:image', content: 'https://nexxtrack.club/ogp.png' },
+      { hid: 'og:url', property: 'og:url', content: 'https://tedder.club' },
+      { hid: 'og:title', property: 'og:title', content: 'Tedder' },
+      { hid: 'og:description', property: 'og:description', content: 'Tedder: Record your presentation' },
+      // { hid: 'og:image', property: 'og:image', content: 'https://tedder.club/ogp.png' },
 
       { hid: 'twitter:card', name: 'twitter:card', content: 'summary_large_imae' },
     ],
@@ -52,7 +52,7 @@ export default {
   ],
 
   axios: {
-    baseURL: 'https://api.nexxtrack.club/',
+    baseURL: 'https://api.tedder.club/',
   },
 
   router: {

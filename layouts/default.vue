@@ -17,6 +17,9 @@
     >
       <v-row>
         <v-col>
+          <nuxt-link to="/about" class="footer-link"><span>About</span></nuxt-link>
+          <nuxt-link to="/faq" class="footer-link"><span>FAQ</span></nuxt-link>
+          <nuxt-link to="/contact" class="footer-link"><span>Contact</span></nuxt-link>
         </v-col>
 
         <v-col justify="right" class="copyright">
@@ -56,7 +59,6 @@ a {
 </style>
 <style scoped>
 .footer-link {
-  color: white;
   margin-right: 24px;
 }
 .copyright {

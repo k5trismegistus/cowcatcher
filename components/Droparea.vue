@@ -1,11 +1,29 @@
 <template>
-  <div
-    class="droparea"
-    @drop.prevent="onDropfile"
-    @dragover.prevent
-  >
+  <v-container>
+    <v-row justify="center">
+      <v-col cols="12" align="center">
+        <v-img
+          class="link"
+          contain
+          max-width="240"
+          src="/logo_transparent.png"
+        ></v-img>
+      </v-col>
+    </v-row>
 
-  </div>
+    <v-row>
+      <v-col>
+        <div
+          class="droparea"
+          @drop.prevent="onDropfile"
+          @dragover.prevent
+        >
+          <p>Drag and drop PDF file here</p>
+
+        </div>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 <script>
 export default {
@@ -14,13 +32,13 @@ export default {
     onDropfile(event) {
       const files = [...event.dataTransfer.files]
       if (files.length > 1) {
-        window.alert('1つだけにしてください')
+        window.alert('Upload only 1 file')
         return
       }
 
       const file = files[0]
       if (file.type !== 'application/pdf') {
-        window.alert('pdfだけです')
+        window.alert('This app supports only PDF without password')
         return
       }
 
@@ -31,8 +49,9 @@ export default {
 </script>
 <style>
 .droparea {
-  width: 300px;
+  width: 100%;
   height: 200px;
   border: solid 1px black;
+
 }
 </style>
