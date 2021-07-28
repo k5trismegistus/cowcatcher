@@ -36,6 +36,25 @@
         >Forward</v-btn>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col>
+        <p>Video control</p>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-btn
+          @click="setWipeMode('left-top')"
+        >Left top</v-btn>
+      </v-col>
+      <v-col>
+        <v-btn
+          @click="setWipeMode('right-top')"
+        >Right top</v-btn>
+      </v-col>
+    </v-row>
+
+    <video width='300px' height='200px' class="preview" ref="wipe" muted v-show="false"></video>
 
   </v-container>
 
@@ -47,6 +66,8 @@ import { readFileAsync } from '~/utils'
 
 const DESIRED_WIDTH = 1280
 const DESIRED_HEIGHT = 720
+const WIPE_WIDTH = 200
+const WIPE_HEIGHT = 200
 
 export default {
   props: ['slidePdfFile'],
@@ -58,6 +79,7 @@ export default {
       scaleCanvas: 1,
       desiredWidth: DESIRED_WIDTH,
       desiredHeight: DESIRED_HEIGHT,
+      wipeMode: 'left-top'
     }
   },
   async mounted() {
@@ -73,6 +95,21 @@ export default {
 
     this.handleResize()
     window.addEventListener('resize', this.handleResize)
+
+
+    this.recordStream = await navigator.mediaDevices.getUserMedia(
+      {
+        video: { width: '640px', height: '480px', facingMode: "environment" },
+        audio: true
+      })
+
+    const preview = this.$refs.wipe
+    preview.srcObject = this.recordStream
+    preview.play()
+
+    setInterval(() => {
+      this.renderVideo()
+    }, 1000/30)
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
@@ -89,6 +126,24 @@ export default {
     },
     showForwardBtn() {
       return this.currentPageNum < this.totalPage
+    },
+    wipeTop() {
+      if (this.wipeMode === 'left-top') {
+        return 0
+      }
+
+      if (this.wipeMode === 'right-top') {
+        return 0
+      }
+    },
+    wipeLeft() {
+      if (this.wipeMode === 'left-top') {
+        return 0
+      }
+
+      if (this.wipeMode === 'right-top') {
+        return DESIRED_WIDTH - WIPE_WIDTH
+      }
     }
   },
   methods: {
@@ -97,6 +152,21 @@ export default {
         const displayWidth = this.$refs.previewZoneContainer.clientWidth
         this.scaleCanvas = displayWidth / DESIRED_WIDTH
       }
+    },
+    setWipeMode(mode) {
+      this.wipeMode = mode
+
+      const canvas = this.$refs.previewZone
+      const context = canvas.getContext('2d')
+
+      context.clearRect(0, 0, DESIRED_WIDTH, DESIRED_HEIGHT)
+      this.renderPage()
+    },
+    async renderVideo() {
+      const wipe = this.$refs.wipe
+      const canvas = this.$refs.previewZone
+      const context = canvas.getContext('2d')
+      context.drawImage(wipe, 80, 0, 480, 480, this.wipeLeft, this.wipeTop, 240, 240)
     },
     async renderPage() {
       if (this.renderingTask) {
