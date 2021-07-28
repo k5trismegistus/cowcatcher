@@ -65,6 +65,11 @@
           @click="setWipeMode('right-top')"
         >Right top</v-btn>
       </v-col>
+      <v-col>
+        <v-btn
+          @click="setWipeMode('fullscreen')"
+        >Fullscreen</v-btn>
+      </v-col>
     </v-row>
     <v-row>
       <v-col>
@@ -83,7 +88,12 @@
         >Finish</v-btn>
         <v-btn
           @click="downloadVideo"
-          v-if="recState === 'recorded'"
+          v-if="recState === 'downloadPreparing'"
+          disabled
+        >Waiting...</v-btn>
+        <v-btn
+          @click="downloadVideo"
+          v-if="recState === 'downloadable'"
         >Download Video</v-btn>
       </v-col>
     </v-row>
@@ -101,7 +111,8 @@ const DESIRED_HEIGHT = 720
 const WIPE_SMALL_WIDTH = 240
 const WIPE_SMALL_HEIGHT = 240
 const WIPE_FS_WIDTH = 1280
-const WIPE_FS_HEIGHT = 720
+const WIPE_FS_HEIGHT = 960
+const WIPE_FS_OFFSET_Y = -120
 
 export default {
   props: ['slidePdfFile'],
@@ -119,6 +130,7 @@ export default {
       recordedVideoUrl: '',
       intervals: [],
       timeouts: [],
+      streams: [],
     }
   },
   async mounted() {
@@ -141,20 +153,28 @@ export default {
 
     this.recorder = new MediaRecorder(recordStream)
     this.recorder.ondataavailable = (e) => {
+      this.recState = 'downloadable'
       this.recordedVideoUrl = window.URL.createObjectURL(e.data) // videoタグが扱えるように、記録データを加工
     }
 
     const rendermergedInterval = setInterval(() => {
       this.rendermerged()
     }, 1000/30)
+    
     this.intervals.push(rendermergedInterval)
-
+    const strms = [webcamStream, mergedStream, recordStream]
+    strms.forEach((strm) => this.streams.push(strm))
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
 
-    this.intervals.forEach((i) => {
-      clearInterval(i)
+    this.intervals.forEach((i) => { clearInterval(i) })
+    this.streams.forEach((strm) => {
+      strm.getTracks().forEach((track) => {
+        if (track.readyState == 'live') {
+            track.stop()
+        }
+      })
     })
   },
   computed: {
@@ -174,34 +194,34 @@ export default {
       return this.currentPageNum < this.totalPage
     },
     wipeWidth() {
-      if (this.wipeMode === 'left-top') {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
         return WIPE_SMALL_WIDTH
       }
 
-      if (this.wipeMode === 'right-top') {
-        return WIPE_SMALL_WIDTH
+      if (this.wipeMode === 'fullscreen') {
+        return WIPE_FS_WIDTH
       }
     },
     wipeHeight() {
-      if (this.wipeMode === 'left-top') {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
         return WIPE_SMALL_HEIGHT
       }
 
-      if (this.wipeMode === 'right-top') {
-        return WIPE_SMALL_HEIGHT
+      if (this.wipeMode === 'fullscreen') {
+        return WIPE_FS_HEIGHT
       }
     },
     wipeTop() {
-      if (this.wipeMode === 'left-top') {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
         return 0
       }
 
-      if (this.wipeMode === 'right-top') {
-        return 0
+      if (this.wipeMode === 'fullscreen') {
+        return WIPE_FS_OFFSET_Y
       }
     },
     wipeLeft() {
-      if (this.wipeMode === 'left-top') {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'fullscreen') {
         return 0
       }
 
@@ -314,7 +334,7 @@ export default {
     },
     finishRecord() {
       this.recorder.stop()
-      this.recState = 'recorded'
+      this.recState = 'downloadPreparing'
     },
     downloadVideo() {
       const a = document.createElement("a")
