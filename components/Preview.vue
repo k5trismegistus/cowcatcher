@@ -1,5 +1,17 @@
 <template>
   <v-container>
+    <v-row justify="center">
+      <v-col cols="12" align="center">
+        <nuxt-link :to="{ name: 'index' }">
+          <v-img
+            class="link"
+            contain
+            max-width="120"
+            src="/logo_transparent.png"
+          ></v-img>
+        </nuxt-link>
+      </v-col>
+    </v-row>
     <v-row>
       <v-col>
         <div

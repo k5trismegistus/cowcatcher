@@ -23,7 +23,7 @@
         </v-col>
 
         <v-col justify="right" class="copyright">
-          <span>&copy; 2021 Tedder</span>
+          <span>&copy; 2021 cowcatcher</span>
         </v-col>
       </v-row>
     </v-footer>
@@ -35,7 +35,7 @@ export default {
   data () {
     return {
       fixed: false,
-      title: 'Tedder'
+      title: 'cowcatcher'
     }
   }
 }

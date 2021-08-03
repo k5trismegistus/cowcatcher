@@ -22,7 +22,7 @@
 
       <v-row>
         <v-col>
-          <h2 class='q-question'>Tedder</h2>
+          <h2 class='q-question'>cowcatcher</h2>
           <p class='q-answer'>
             Record your presentation<br />
           </p>

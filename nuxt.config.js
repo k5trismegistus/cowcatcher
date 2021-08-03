@@ -10,24 +10,24 @@ export default {
   target: 'static',
 
   head: {
-    titleTemplate: '%s - Tedder: Record your presentation',
-    title: 'Tedder',
+    titleTemplate: '%s - cowcatcher: Record your presentation',
+    title: 'cowcatcher',
     htmlAttrs: {
       lang: 'en'
     },
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: 'Tedder: Record your presentation' },
-      { hid: 'keywords', name: 'keywords', content: 'DJ,playlist,music,club' },
-      { hid: 'author', name: 'author', content: 'tedder' },
+      { hid: 'description', name: 'description', content: 'cowcatcher: Record your presentation' },
+      { hid: 'keywords', name: 'keywords', content: 'presentation' },
+      { hid: 'author', name: 'author', content: 'cowcatcher' },
 
-      { hid: 'og:site_name', property: 'og:site_name', content: 'Tedder' },
+      { hid: 'og:site_name', property: 'og:site_name', content: 'cowcatcher' },
       { hid: 'og:type', property: 'og:type', content: 'website' },
-      { hid: 'og:url', property: 'og:url', content: 'https://tedder.club' },
-      { hid: 'og:title', property: 'og:title', content: 'Tedder' },
-      { hid: 'og:description', property: 'og:description', content: 'Tedder: Record your presentation' },
-      // { hid: 'og:image', property: 'og:image', content: 'https://tedder.club/ogp.png' },
+      { hid: 'og:url', property: 'og:url', content: 'https://cowcatcher.biz' },
+      { hid: 'og:title', property: 'og:title', content: 'cowcatcher' },
+      { hid: 'og:description', property: 'og:description', content: 'cowcatcher: Record your presentation' },
+      // { hid: 'og:image', property: 'og:image', content: 'https://cowcatcher.biz/ogp.png' },
 
       { hid: 'twitter:card', name: 'twitter:card', content: 'summary_large_imae' },
     ],
@@ -51,10 +51,6 @@ export default {
     '@nuxtjs/gtm',
   ],
 
-  axios: {
-    baseURL: 'https://api.tedder.club/',
-  },
-
   router: {
     extendRoutes(routes, resolve) {
       for (const route of routes) {
@@ -64,7 +60,7 @@ export default {
   },
 
   gtm: {
-    id: 'GTM-NWT6KMX'
+    id: 'GTM-K5XW8TX'
   },
 
   vuetify: {

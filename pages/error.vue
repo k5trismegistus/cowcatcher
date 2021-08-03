@@ -24,7 +24,7 @@
         <v-col>
           <h2>Something wrong with this site</h2>
           <p>
-            If you'd like, please submit bug report as issue <a class="here-link" href="https://github.com/k5trismegistus/tedder" target="_blank">here</a> (Jump to Github)
+            If you'd like, please submit bug report as issue <a class="here-link" href="https://github.com/k5trismegistus/cowcatcher" target="_blank">here</a> (Jump to Github)
           </p>
         </v-col>
       </v-row>
