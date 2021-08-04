@@ -24,65 +24,69 @@
             :height='`${desiredHeight}`'
             ref="previewZone"
             class="canvas"
-            v-show="false"
           ></canvas>
           <canvas
             :width='`${desiredWidth}`'
             :height='`${desiredHeight}`'
             ref="wipeZone"
             class="canvas"
-            v-show="false"
           ></canvas>
           <canvas
             :width='`${desiredWidth}`'
             :height='`${desiredHeight}`'
             ref="mergedZone"
             class="canvas"
+            v-show="false"
           ></canvas>
         </div>
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-        <p>Slide control</p>
+        <v-row>
+          <p>Slide control</p>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-btn
+              @click="pageBack"
+              :disabled="!showBackBtn"
+            >Back</v-btn>
+          </v-col>
+          <v-col>
+            <v-btn
+              @click="pageForward"
+              :disabled="!showForwardBtn"
+            >Forward</v-btn>
+          </v-col>
+        </v-row>
+      </v-col>
+      <v-col>
+        <v-row>
+          <v-col>
+            <p>Video control</p>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-btn
+              @click="setWipeMode('left-top')"
+            >Left top</v-btn>
+          </v-col>
+          <v-col>
+            <v-btn
+              @click="setWipeMode('right-top')"
+            >Right top</v-btn>
+          </v-col>
+          <v-col>
+            <v-btn
+              @click="setWipeMode('fullscreen')"
+            >Fullscreen</v-btn>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
-    <v-row>
-      <v-col>
-        <v-btn
-          @click="pageBack"
-          v-if="showBackBtn"
-        >Back</v-btn>
-      </v-col>
-      <v-col>
-        <v-btn
-          @click="pageForward"
-          v-if="showForwardBtn"
-        >Forward</v-btn>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <p>Video control</p>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <v-btn
-          @click="setWipeMode('left-top')"
-        >Left top</v-btn>
-      </v-col>
-      <v-col>
-        <v-btn
-          @click="setWipeMode('right-top')"
-        >Right top</v-btn>
-      </v-col>
-      <v-col>
-        <v-btn
-          @click="setWipeMode('fullscreen')"
-        >Fullscreen</v-btn>
-      </v-col>
-    </v-row>
+
     <v-row>
       <v-col>
         <p>Recording control</p>
@@ -126,6 +130,9 @@ const WIPE_FS_WIDTH = 1280
 const WIPE_FS_HEIGHT = 960
 const WIPE_FS_OFFSET_Y = -120
 
+const WEBCAM_SOURCE_WIDTH = 640
+const WEBCAM_SOURCE_HEIGHT = 480
+
 export default {
   props: ['slidePdfFile'],
   data() {
@@ -166,13 +173,13 @@ export default {
     this.recorder = new MediaRecorder(recordStream)
     this.recorder.ondataavailable = (e) => {
       this.recState = 'downloadable'
-      this.recordedVideoUrl = window.URL.createObjectURL(e.data) // videoタグが扱えるように、記録データを加工
+      this.recordedVideoUrl = window.URL.createObjectURL(e.data)
     }
 
     const rendermergedInterval = setInterval(() => {
       this.rendermerged()
     }, 1000/30)
-    
+
     this.intervals.push(rendermergedInterval)
     const strms = [webcamStream, mergedStream, recordStream]
     strms.forEach((strm) => this.streams.push(strm))
@@ -205,7 +212,43 @@ export default {
     showForwardBtn() {
       return this.currentPageNum < this.totalPage
     },
-    wipeWidth() {
+    sWipeWidth() {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
+        return WEBCAM_SOURCE_HEIGHT // Use height to make square
+      }
+
+      if (this.wipeMode === 'fullscreen') {
+        return WEBCAM_SOURCE_WIDTH
+      }
+    },
+    sWipeHeight() {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
+        return WEBCAM_SOURCE_HEIGHT
+      }
+
+      if (this.wipeMode === 'fullscreen') {
+        return WEBCAM_SOURCE_HEIGHT
+      }
+    },
+    sWipeOffsetX() {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
+        return (WEBCAM_SOURCE_WIDTH - WEBCAM_SOURCE_HEIGHT) / 2
+      }
+
+      if (this.wipeMode === 'fullscreen') {
+        return 0
+      }
+    },
+    sWipeOffsetY() {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
+        return 0
+      }
+
+      if (this.wipeMode === 'fullscreen') {
+        return (WEBCAM_SOURCE_HEIGHT - (WEBCAM_SOURCE_WIDTH * 9 / 16)) / 2
+      }
+    },
+    dWipeWidth() {
       if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
         return WIPE_SMALL_WIDTH
       }
@@ -214,7 +257,7 @@ export default {
         return WIPE_FS_WIDTH
       }
     },
-    wipeHeight() {
+    dWipeHeight() {
       if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
         return WIPE_SMALL_HEIGHT
       }
@@ -223,7 +266,16 @@ export default {
         return WIPE_FS_HEIGHT
       }
     },
-    wipeTop() {
+    dWipeOffsetX() {
+      if (this.wipeMode === 'left-top' || this.wipeMode === 'fullscreen') {
+        return 0
+      }
+
+      if (this.wipeMode === 'right-top') {
+        return DESIRED_WIDTH - this.dWipeWidth
+      }
+    },
+    dWipeOffsetY() {
       if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
         return 0
       }
@@ -232,15 +284,6 @@ export default {
         return WIPE_FS_OFFSET_Y
       }
     },
-    wipeLeft() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'fullscreen') {
-        return 0
-      }
-
-      if (this.wipeMode === 'right-top') {
-        return DESIRED_WIDTH - this.wipeWidth
-      }
-    }
   },
   methods: {
     handleResize (event) {
@@ -251,7 +294,7 @@ export default {
     },
     async initWipe() {
       const webcamStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: "environment" },
+        video: { width: WEBCAM_SOURCE_WIDTH, height: 480, facingMode: "user" },
         audio: true,
       })
 
@@ -260,7 +303,7 @@ export default {
       preview.play()
 
       const renderWipeInterval = setInterval(() => {
-        this.renderVideo()
+        this.renderWipe()
       }, 1000/30)
       this.intervals.push(renderWipeInterval)
 
@@ -290,11 +333,14 @@ export default {
       context.drawImage(preview, 0, 0)
       context.drawImage(wipe, 0, 0)
     },
-    async renderVideo() {
+    async renderWipe() {
       const wipe = this.$refs.wipe
       const canvas = this.$refs.wipeZone
       const context = canvas.getContext('2d')
-      context.drawImage(wipe, 80, 0, 480, 480, this.wipeLeft, this.wipeTop, this.wipeWidth, this.wipeHeight)
+
+      context.drawImage(wipe,
+        this.sWipeOffsetX, this.sWipeOffsetY, this.sWipeWidth, this.sWipeHeight,
+        this.dWipeOffsetX, this.dWipeOffsetY, this.dWipeWidth, this.dWipeHeight)
     },
     async renderPage() {
       if (this.renderingTask) {
@@ -353,7 +399,7 @@ export default {
       document.body.appendChild(a)
       a.style = "display: none"
       a.href = this.recordedVideoUrl
-      a.download = "out.webm"
+      a.download = "download.webm"
       a.click(this.recordedVideoUrl)
       window.URL.revokeObjectURL(this.recordedVideoUrl)
     },
