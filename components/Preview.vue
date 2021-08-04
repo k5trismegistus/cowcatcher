@@ -20,20 +20,20 @@
           :style="`height: ${containerHeight}px; transform: scale(${scaleCanvas}); transform-origin: 0 0`"
         >
           <canvas
-            :width='`${desiredWidth}`'
-            :height='`${desiredHeight}`'
+            :width='`${videoConfig.width}`'
+            :height='`${videoConfig.height}`'
             ref="previewZone"
             class="canvas"
           ></canvas>
           <canvas
-            :width='`${desiredWidth}`'
-            :height='`${desiredHeight}`'
-            ref="wipeZone"
+            :width='`${videoConfig.width}`'
+            :height='`${videoConfig.height}`'
+            ref="bubbleZone"
             class="canvas"
           ></canvas>
           <canvas
-            :width='`${desiredWidth}`'
-            :height='`${desiredHeight}`'
+            :width='`${videoConfig.width}`'
+            :height='`${videoConfig.height}`'
             ref="mergedZone"
             class="canvas"
             v-show="false"
@@ -70,17 +70,17 @@
         <v-row>
           <v-col>
             <v-btn
-              @click="setWipeMode('left-top')"
+              @click="setBubbleMode('left-top')"
             >Left top</v-btn>
           </v-col>
           <v-col>
             <v-btn
-              @click="setWipeMode('right-top')"
+              @click="setBubbleMode('right-top')"
             >Right top</v-btn>
           </v-col>
           <v-col>
             <v-btn
-              @click="setWipeMode('fullscreen')"
+              @click="setBubbleMode('fullscreen')"
             >Fullscreen</v-btn>
           </v-col>
         </v-row>
@@ -114,37 +114,35 @@
       </v-col>
     </v-row>
 
-    <video width='300px' height='200px' class="preview" ref="wipe" muted v-show="false"></video>
+    <video width='300px' height='200px' class="preview" ref="bubble" muted v-show="false"></video>
 
   </v-container>
 
 </template>
 <script>
-import { loadPdf } from '~/utils'
-
-const DESIRED_WIDTH = 1280
-const DESIRED_HEIGHT = 720
-const WIPE_SMALL_WIDTH = 240
-const WIPE_SMALL_HEIGHT = 240
-const WIPE_FS_WIDTH = 1280
-const WIPE_FS_HEIGHT = 960
-const WIPE_FS_OFFSET_Y = -120
-
-const WEBCAM_SOURCE_WIDTH = 640
-const WEBCAM_SOURCE_HEIGHT = 480
+import { loadPdf, downloadFile } from '~/utils'
+import {
+  videoWidth, videoHeight, webcamSourceWidth, webcamSourceHeight,
+  sBubbleWidth, sBubbleHeight, sBubbleOffsetX, sBubbleOffsetY,
+  dBubbleWidth, dBubbleHeight, dBubbleOffsetX, dBubbleOffsetY,
+  bubbleConfig,
+} from '~/utils/video.js'
 
 export default {
   props: ['slidePdfFile'],
   data() {
+    const videoMode = 'hd' // Currently, only 'hd' is supported.
+    const bubbleMode = 'left-top'
+
     return {
       recState: 'ready',
       pdf: null,
       currentPageNum: 1,
       renderingTask: null,
       scaleCanvas: 1,
-      desiredWidth: DESIRED_WIDTH,
-      desiredHeight: DESIRED_HEIGHT,
-      wipeMode: 'left-top',
+      videoConfig: { mode: videoMode, width: videoWidth(videoMode), height: videoHeight(videoMode) },
+      bubbleConfig: bubbleConfig(bubbleMode),
+      bubbleMode: 'left-top',
       recorder: null,
       recordedVideoUrl: '',
       intervals: [],
@@ -159,7 +157,7 @@ export default {
     this.handleResize()
     window.addEventListener('resize', this.handleResize)
 
-    const webcamStream = await this.initWipe()
+    const webcamStream = await this.initBubble()
     const mergedStream = this.$refs.mergedZone.captureStream()
 
     const recordStream = new MediaStream()
@@ -198,7 +196,7 @@ export default {
   },
   computed: {
     containerHeight() {
-      return DESIRED_HEIGHT * this.scaleCanvas
+      return this.videoConfig.height * this.scaleCanvas
     },
     totalPage() {
       if (!this.pdf) {
@@ -212,135 +210,70 @@ export default {
     showForwardBtn() {
       return this.currentPageNum < this.totalPage
     },
-    sWipeWidth() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return WEBCAM_SOURCE_HEIGHT // Use height to make square
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return WEBCAM_SOURCE_WIDTH
-      }
-    },
-    sWipeHeight() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return WEBCAM_SOURCE_HEIGHT
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return WEBCAM_SOURCE_HEIGHT
-      }
-    },
-    sWipeOffsetX() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return (WEBCAM_SOURCE_WIDTH - WEBCAM_SOURCE_HEIGHT) / 2
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return 0
-      }
-    },
-    sWipeOffsetY() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return 0
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return (WEBCAM_SOURCE_HEIGHT - (WEBCAM_SOURCE_WIDTH * 9 / 16)) / 2
-      }
-    },
-    dWipeWidth() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return WIPE_SMALL_WIDTH
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return WIPE_FS_WIDTH
-      }
-    },
-    dWipeHeight() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return WIPE_SMALL_HEIGHT
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return WIPE_FS_HEIGHT
-      }
-    },
-    dWipeOffsetX() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'fullscreen') {
-        return 0
-      }
-
-      if (this.wipeMode === 'right-top') {
-        return DESIRED_WIDTH - this.dWipeWidth
-      }
-    },
-    dWipeOffsetY() {
-      if (this.wipeMode === 'left-top' || this.wipeMode === 'right-top') {
-        return 0
-      }
-
-      if (this.wipeMode === 'fullscreen') {
-        return WIPE_FS_OFFSET_Y
-      }
-    },
   },
   methods: {
     handleResize (event) {
       if (this.$refs.previewZoneContainer) {
         const displayWidth = this.$refs.previewZoneContainer.clientWidth
-        this.scaleCanvas = displayWidth / DESIRED_WIDTH
+        this.scaleCanvas = displayWidth / this.videoConfig.width
       }
     },
-    async initWipe() {
+    async initBubble() {
       const webcamStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: WEBCAM_SOURCE_WIDTH, height: 480, facingMode: "user" },
+        video: {
+          width: this.bubbleConfig.webcamSource.width,
+          height: this.bubbleConfig.webcamSource.height,
+          facingMode: "user"
+        },
         audio: true,
       })
 
-      const preview = this.$refs.wipe
+      const preview = this.$refs.bubble
       preview.srcObject = webcamStream
       preview.play()
 
-      const renderWipeInterval = setInterval(() => {
-        this.renderWipe()
+      const renderBubbleInterval = setInterval(() => {
+        this.renderBubble()
       }, 1000/30)
-      this.intervals.push(renderWipeInterval)
+      this.intervals.push(renderBubbleInterval)
 
       return webcamStream
     },
-    setWipeMode(mode) {
-      this.wipeMode = mode
-      this.clearWipe()
+    setBubbleMode(mode) {
+      this.bubbleConfig = bubbleConfig(mode)
+
+      this.clearBubble()
       this.renderPage()
     },
-    clearWipe() {
-      const canvas = this.$refs.wipeZone
+    clearBubble() {
+      const canvas = this.$refs.bubbleZone
       const context = canvas.getContext('2d')
-      context.clearRect(0, 0, DESIRED_WIDTH, DESIRED_HEIGHT)
+      context.clearRect(0, 0, this.videoConfig.width, this.videoConfig.height)
     },
     clearPreview() {
       const canvas = this.$refs.previewZone
       const context = canvas.getContext('2d')
-      context.clearRect(0, 0, DESIRED_WIDTH, DESIRED_HEIGHT)
+      context.clearRect(0, 0, this.videoConfig.width, this.videoConfig.height)
     },
     async rendermerged() {
       const preview = this.$refs.previewZone
-      const wipe = this.$refs.wipeZone
+      const bubble = this.$refs.bubbleZone
 
       const canvas = this.$refs.mergedZone
       const context = canvas.getContext('2d')
       context.drawImage(preview, 0, 0)
-      context.drawImage(wipe, 0, 0)
+      context.drawImage(bubble, 0, 0)
     },
-    async renderWipe() {
-      const wipe = this.$refs.wipe
-      const canvas = this.$refs.wipeZone
+    async renderBubble() {
+      const bubble = this.$refs.bubble
+      const canvas = this.$refs.bubbleZone
       const context = canvas.getContext('2d')
 
-      context.drawImage(wipe,
-        this.sWipeOffsetX, this.sWipeOffsetY, this.sWipeWidth, this.sWipeHeight,
-        this.dWipeOffsetX, this.dWipeOffsetY, this.dWipeWidth, this.dWipeHeight)
+      const source = this.bubbleConfig.source
+      const dest = this.bubbleConfig.dest
+
+      context.drawImage(bubble, source.offsetX, source.offsetY, source.width, source.height, dest.offsetX, dest.offsetY, dest.width, dest.height)
+
     },
     async renderPage() {
       if (this.renderingTask) {
@@ -352,12 +285,12 @@ export default {
       const canvas = this.$refs.previewZone
       const viewport = page.getViewport({ scale: 1 })
       const scale = Math.min(
-        DESIRED_WIDTH / viewport.width,
-        DESIRED_HEIGHT / viewport.height
+        this.videoConfig.width / viewport.width,
+        this.videoConfig.height / viewport.height
       )
       const scaledViewport = page.getViewport({ scale: scale })
-      const offsetX = (DESIRED_WIDTH - scaledViewport.width) / 2
-      const offsetY = (DESIRED_HEIGHT - scaledViewport.height) / 2
+      const offsetX = (this.videoConfig.width - scaledViewport.width) / 2
+      const offsetY = (this.videoConfig.height - scaledViewport.height) / 2
 
       const vp = page.getViewport({
         scale: scale,
@@ -395,13 +328,7 @@ export default {
       this.recState = 'downloadPreparing'
     },
     downloadVideo() {
-      const a = document.createElement("a")
-      document.body.appendChild(a)
-      a.style = "display: none"
-      a.href = this.recordedVideoUrl
-      a.download = "download.webm"
-      a.click(this.recordedVideoUrl)
-      window.URL.revokeObjectURL(this.recordedVideoUrl)
+      downloadFile(this.recordedVideoUrl, 'download.webm')
     },
   }
 }

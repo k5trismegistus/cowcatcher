@@ -22,3 +22,13 @@ export const loadPdf = async (file) => {
 
   return pdf
 }
+
+export const downloadFile = (url, filename) => {
+  const a = document.createElement("a")
+  document.body.appendChild(a)
+  a.style = "display: none"
+  a.href = url
+  a.download = "download.webm"
+  a.click(url)
+  window.URL.revokeObjectURL(url)
+}
