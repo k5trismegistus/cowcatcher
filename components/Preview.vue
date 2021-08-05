@@ -44,7 +44,9 @@
     <v-row>
       <v-col>
         <v-row>
-          <p>Slide control</p>
+          <v-col>
+            <p>Slide control</p>
+          </v-col>
         </v-row>
         <v-row>
           <v-col>
@@ -152,7 +154,6 @@ export default {
   },
   async mounted() {
     this.pdf = await loadPdf(this.slidePdfFile)
-    this.currentPageNum = 1
     this.renderPage()
     this.handleResize()
     window.addEventListener('resize', this.handleResize)
@@ -177,8 +178,8 @@ export default {
     const rendermergedInterval = setInterval(() => {
       this.rendermerged()
     }, 1000/30)
-
     this.intervals.push(rendermergedInterval)
+
     const strms = [webcamStream, mergedStream, recordStream]
     strms.forEach((strm) => this.streams.push(strm))
   },
