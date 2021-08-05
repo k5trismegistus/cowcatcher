@@ -1,121 +1,118 @@
 <template>
   <v-container>
-    <v-row justify="center">
-      <v-col cols="12" align="center">
-        <nuxt-link :to="{ name: 'index' }">
-          <v-img
-            class="link"
-            contain
-            max-width="120"
-            src="/logo_transparent.png"
-          ></v-img>
-        </nuxt-link>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <div
-          class="previewZoneContainer"
-          ref="previewZoneContainer"
-          :style="`height: ${containerHeight}px; transform: scale(${scaleCanvas}); transform-origin: 0 0`"
-        >
-          <canvas
-            :width='`${videoConfig.width}`'
-            :height='`${videoConfig.height}`'
-            ref="previewZone"
-            class="canvas"
-          ></canvas>
-          <canvas
-            :width='`${videoConfig.width}`'
-            :height='`${videoConfig.height}`'
-            ref="bubbleZone"
-            class="canvas"
-          ></canvas>
-          <canvas
-            :width='`${videoConfig.width}`'
-            :height='`${videoConfig.height}`'
-            ref="mergedZone"
-            class="canvas"
-            v-show="false"
-          ></canvas>
-        </div>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <v-row>
-          <v-col>
-            <p>Slide control</p>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-btn
-              @click="pageBack"
-              :disabled="!showBackBtn"
-            >Back</v-btn>
-          </v-col>
-          <v-col>
-            <v-btn
-              @click="pageForward"
-              :disabled="!showForwardBtn"
-            >Forward</v-btn>
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-col>
-        <v-row>
-          <v-col>
-            <p>Video control</p>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-btn
-              @click="setBubbleMode('left-top')"
-            >Left top</v-btn>
-          </v-col>
-          <v-col>
-            <v-btn
-              @click="setBubbleMode('right-top')"
-            >Right top</v-btn>
-          </v-col>
-          <v-col>
-            <v-btn
-              @click="setBubbleMode('fullscreen')"
-            >Fullscreen</v-btn>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+    <v-system-bar height="64px">
+      <p>{{recordingStatusText}}</p>
+    </v-system-bar>
+    <v-card>
+      <v-row>
+        <v-col>
+          <div
+            class="previewZoneContainer"
+            ref="previewZoneContainer"
+            :style="`height: ${containerHeight}px; transform: scale(${scaleCanvas}); transform-origin: 0 0`"
+          >
+            <canvas
+              :width='`${videoConfig.width}`'
+              :height='`${videoConfig.height}`'
+              ref="previewZone"
+              class="canvas"
+            ></canvas>
+            <canvas
+              :width='`${videoConfig.width}`'
+              :height='`${videoConfig.height}`'
+              ref="bubbleZone"
+              class="canvas"
+            ></canvas>
+            <canvas
+              :width='`${videoConfig.width}`'
+              :height='`${videoConfig.height}`'
+              ref="mergedZone"
+              class="canvas"
+              v-show="false"
+            ></canvas>
+          </div>
+        </v-col>
+      </v-row>
 
-    <v-row>
-      <v-col>
-        <p>Recording control</p>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <v-btn
-          @click="startRecord"
-          v-if="recState === 'ready'"
-        >Record</v-btn>
-        <v-btn
-          @click="finishRecord"
-          v-if="recState === 'recording'"
-        >Finish</v-btn>
-        <v-btn
-          @click="downloadVideo"
-          v-if="recState === 'downloadPreparing'"
-          disabled
-        >Waiting...</v-btn>
-        <v-btn
-          @click="downloadVideo"
-          v-if="recState === 'downloadable'"
-        >Download Video</v-btn>
-      </v-col>
-    </v-row>
+      <v-card>
+        <v-row>
+          <v-col>
+            <v-row>
+              <v-col>
+                <p>Slide control</p>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-btn
+                  @click="pageBack"
+                  :disabled="!showBackBtn"
+                >Back</v-btn>
+              </v-col>
+              <v-col>
+                <v-btn
+                  @click="pageForward"
+                  :disabled="!showForwardBtn"
+                >Forward</v-btn>
+              </v-col>
+            </v-row>
+          </v-col>
+          <v-col>
+            <v-row>
+              <v-col>
+                <p>Video control</p>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-btn
+                  @click="setBubbleMode('left-top')"
+                >Left top</v-btn>
+              </v-col>
+              <v-col>
+                <v-btn
+                  @click="setBubbleMode('right-top')"
+                >Right top</v-btn>
+              </v-col>
+              <v-col>
+                <v-btn
+                  @click="setBubbleMode('fullscreen')"
+                >Fullscreen</v-btn>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
 
+        <v-row>
+          <v-col>
+            <p>Recording control</p>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-btn
+              color="red"
+              @click="startRecord"
+              v-if="recState === 'ready'"
+            >Record</v-btn>
+            <v-btn
+              color="red"
+              @click="finishRecord"
+              v-if="recState === 'recording'"
+            >Finish</v-btn>
+            <v-btn
+              @click="downloadVideo"
+              v-if="recState === 'downloadPreparing'"
+              disabled
+            >Waiting...</v-btn>
+            <v-btn
+              @click="downloadVideo"
+              v-if="recState === 'downloadable'"
+            >Download Video</v-btn>
+          </v-col>
+        </v-row>
+      </v-card>
+    </v-card>
     <video width='300px' height='200px' class="preview" ref="bubble" muted v-show="false"></video>
 
   </v-container>
@@ -210,6 +207,17 @@ export default {
     },
     showForwardBtn() {
       return this.currentPageNum < this.totalPage
+    },
+    recordingStatusText() {
+      if (this.recState === 'ready') {
+        return 'Press "RECORD to start recording"'
+      }
+      if (this.recState === 'recording') {
+        return 'Recording'
+      }
+      if (this.recState === 'downloadable') {
+        return 'Recording finished. Press "Download" to download video.'
+      }
     },
   },
   methods: {
