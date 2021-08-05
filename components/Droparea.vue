@@ -19,6 +19,8 @@
           @dragover.prevent
         >
           <p>Drag and drop PDF file here</p>
+          <p>or</p>
+          <p>Select PDF file below</p>
           <input type="file" @change="onSelectfile" />
         </div>
       </v-col>
@@ -59,6 +61,9 @@ export default {
   width: 100%;
   height: 200px;
   border: solid 1px black;
-
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 </style>
